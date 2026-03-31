@@ -1,0 +1,46 @@
+name: Sync Docs to Pode-agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/pode-agent/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Copy docs/pode-agent → chenzzzzy/Pode-agent
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Kode-Agent
+        uses: actions/checkout@v4
+
+      - name: Configure git credentials
+        env:
+          PAT: ${{ secrets.PODE_AGENT_PAT }}
+        run: |
+          git config --global url."https://x-access-token:${PAT}@github.com/".insteadOf "https://github.com/"
+
+      - name: Clone Pode-agent repo
+        run: |
+          git clone https://github.com/chenzzzzy/Pode-agent.git /tmp/pode-agent
+
+      - name: Copy docs
+        run: |
+          mkdir -p /tmp/pode-agent/docs
+          cp -r docs/pode-agent/. /tmp/pode-agent/docs/
+
+      - name: Commit and push
+        run: |
+          cd /tmp/pode-agent
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to sync."
+          else
+            git commit -m "sync: update docs from Kode-Agent/docs/pode-agent"
+            git push origin HEAD:main
+          fi
