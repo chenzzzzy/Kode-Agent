@@ -11,15 +11,21 @@ jobs:
   sync:
     name: Copy docs/pode-agent → chenzzzzy/Pode-agent
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout Kode-Agent
         uses: actions/checkout@v4
 
-      - name: Clone Pode-agent repo
+      - name: Configure git credentials
         env:
           PAT: ${{ secrets.PODE_AGENT_PAT }}
         run: |
-          git clone "https://x-access-token:${PAT}@github.com/chenzzzzy/Pode-agent.git" /tmp/pode-agent
+          git config --global url."https://x-access-token:${PAT}@github.com/".insteadOf "https://github.com/"
+
+      - name: Clone Pode-agent repo
+        run: |
+          git clone https://github.com/chenzzzzy/Pode-agent.git /tmp/pode-agent
 
       - name: Copy docs
         run: |
@@ -27,8 +33,6 @@ jobs:
           cp -r docs/pode-agent/. /tmp/pode-agent/docs/
 
       - name: Commit and push
-        env:
-          PAT: ${{ secrets.PODE_AGENT_PAT }}
         run: |
           cd /tmp/pode-agent
           git config user.name "github-actions[bot]"
@@ -38,5 +42,5 @@ jobs:
             echo "No changes to sync."
           else
             git commit -m "sync: update docs from Kode-Agent/docs/pode-agent"
-            git push "https://x-access-token:${PAT}@github.com/chenzzzzy/Pode-agent.git" HEAD:main
+            git push origin HEAD:main
           fi
